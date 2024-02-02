@@ -64,3 +64,21 @@ func Loop() {
 func PushTrigger(at string, trigger Trigger) {
 	tm.PushTimerTrigger(at, trigger)
 }
+
+func TimerTestCode() {
+	PushTrigger(time.Now().Add(20*time.Second).Format("2006-01-02 15:04:05"), Trigger{
+		Fun: func(now int64, a interface{}) {
+			tt := time.Unix(now, 0)
+			fmt.Printf("now: %s, param: %v", tt.Format("2006-01-02 15:04:05"), a)
+		},
+		Param: "程序已启动20秒",
+	})
+	PushTrigger(time.Now().Add(30*time.Second).Format("2006-01-02 15:04:05"), Trigger{
+		Fun: func(now int64, a interface{}) {
+			tt := time.Unix(now, 0)
+			fmt.Printf("now: %s, param: %v", tt.Format("2006-01-02 15:04:05"), a)
+		},
+		Param: "程序已启动30秒",
+	})
+	go Loop()
+}
