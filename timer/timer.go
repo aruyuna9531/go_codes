@@ -50,17 +50,6 @@ func GetInst() *Timer {
 	return tm
 }
 
-func Loop() {
-	tk := time.NewTicker(1 * time.Second)
-	for {
-		select {
-		case t := <-tk.C:
-			fmt.Printf("now: %s\n", t.Format("2006-01-02 15:04:05"))
-			tm.Trigger(t.Format("2006-01-02 15:04:05"))
-		}
-	}
-}
-
 func PushTrigger(at string, trigger Trigger) {
 	tm.PushTimerTrigger(at, trigger)
 }
@@ -80,5 +69,4 @@ func TimerTestCode() {
 		},
 		Param: "程序已启动30秒",
 	})
-	go Loop()
 }
