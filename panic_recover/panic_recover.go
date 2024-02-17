@@ -14,6 +14,7 @@ func PanicRecoverTrace() {
 	}
 
 	buf := fmt.Sprintf("Panic called, message: [%v], Trace: \n", r)
+	// 下面其实跟debug.StackTrace()差不多 不过那个分行看着好别扭
 	traceSkip := 1
 	for {
 		pc, file, line, ok := runtime.Caller(traceSkip)
