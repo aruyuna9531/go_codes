@@ -9,11 +9,21 @@ type SortableInt interface {
 	int | int32 | int64 | uint | uint32 | uint64
 }
 
+type IRanker[K comparable] interface {
+	isRanker()
+	Key() K
+	Less(skiplist.ISkiplistElement[K]) bool
+}
+
 type Ranker[K comparable, V SortableInt] struct {
 	RankerId   K
 	Value      V
 	UpdateTime int64
 	rankPtr    *RankBase[K, V]
+}
+
+func (r *Ranker[K, V]) isRanker() {
+
 }
 
 func (r *Ranker[K, V]) Key() K {
@@ -44,33 +54,55 @@ func (r *Ranker[K, V]) GetRank() (ret int32, err error) {
 
 type RankBase[K comparable, V SortableInt] struct {
 	rankMain *skiplist.SkipList[K]
+	dict     map[K]V
 }
 
 func NewRank[K comparable, V SortableInt]() *RankBase[K, V] {
 	return &RankBase[K, V]{
 		rankMain: skiplist.NewSkipList[K](),
+		dict:     make(map[K]V),
 	}
 }
 
 func (rb *RankBase[K, V]) AddRanker(e *Ranker[K, V]) (err error) {
 	e.rankPtr = rb
+	defer func() {
+		if err == nil {
+			rb.dict[e.Key()] = e.Value
+		}
+	}()
 	return rb.rankMain.Add(e)
 }
 
 func (rb *RankBase[K, V]) RemoveRanker(e *Ranker[K, V]) (err error) {
+	defer func() {
+		if err == nil {
+			delete(rb.dict, e.Key())
+		}
+	}()
 	return rb.rankMain.DeleteByKey(e.Key())
 }
 
 func (rb *RankBase[K, V]) RemoveRankerByKey(k K) (err error) {
+	defer func() {
+		if err != nil {
+			delete(rb.dict, k)
+		}
+	}()
 	return rb.rankMain.DeleteByKey(k)
 }
 
-func (rb *RankBase[K, V]) UpdateRankerData(newData *Ranker[K, V]) (err error) {
+func (rb *RankBase[K, V]) UpdateRankerData(newData IRanker[K]) (err error) {
 	err = rb.rankMain.DeleteByKey(newData.Key())
 	if err != nil {
 		return
 	}
 	newData.rankPtr = rb
+	defer func() {
+		if err == nil {
+			rb.dict[e.Key()] = e.Value
+		}
+	}()
 	return rb.rankMain.Add(newData)
 }
 
@@ -82,13 +114,13 @@ func (rb *RankBase[K, V]) GetReverseRank(rankerKey K) (ret int32, err error) {
 	return rb.rankMain.GetReverseRankByKey(rankerKey)
 }
 
-func (rb *RankBase[K, V]) Range(startAt int32, endAt int32) (ret []*Ranker[K, V], err error) {
+func (rb *RankBase[K, V]) Range(startAt int32, endAt int32) (ret []IRanker[K], err error) {
 	nds, err := rb.rankMain.GetRange(startAt, endAt)
 	if err != nil {
 		return
 	}
 	for _, nd := range nds {
-		ndv, ok := nd.(*Ranker[K, V])
+		ndv, ok := nd.(IRanker[K])
 		if !ok {
 			panic("RankBase::Range error: existing element from GetRange is not kind of RankerBase")
 		}
@@ -97,6 +129,33 @@ func (rb *RankBase[K, V]) Range(startAt int32, endAt int32) (ret []*Ranker[K, V]
 	return
 }
 
+func (rb *RankBase[K, V]) GetAllRankers() (ret []*Ranker[K, V], err error) {
+	return rb.Range(1, rb.rankMain.GetElementsCount())
+}
+
+func (rb *RankBase[K, V]) GetRankerDataByRank(rank int32) (ret *Ranker[K, V], err error) {
+	nd, err := rb.rankMain.GetElementByRank(rank)
+	if err != nil {
+		return
+	}
+	ndv, ok := nd.(*Ranker[K, V])
+	if !ok {
+		panic("RankBase::Range error: existing element from GetRange is not kind of RankerBase")
+	}
+	return ndv, nil
+}
+
+func (rb *RankBase[K, V]) GetRankerDataByKey(rankerKey K) (ret *Ranker[K, V], err error) {
+	nd, err := rb.rankMain.GetElementByKey(rankerKey)
+	if err != nil {
+		return
+	}
+	ndv, ok := nd.(*Ranker[K, V])
+	if !ok {
+		panic("RankBase::Range error: existing element from GetElementByKey is not kind of RankerBase")
+	}
+	return ndv, nil
+}
 func (rb *RankBase[K, V]) Print() {
 	rb.rankMain.Print()
 }
