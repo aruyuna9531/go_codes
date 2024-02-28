@@ -28,9 +28,9 @@ EXPOSE 9001 9002
 
 # 这里依赖下载失败可能会导致image创建失败，可以根据情况注掉上面的PROXY多试几次。
 # docker image may build failed if import go mod download failed. you can modify PROXY above and try again
-RUN go build
+RUN go build -o test
 
-# test是go.mod的包名，go build不带参数就生成test可执行文件（懒 反正docker一启你也不用关心它的可执行程序叫阿猫还是阿狗）
+# test是上面-o指定的可执行文件名字，go build不带参数的名字就是go.mod指定module名字（懒 反正docker一启你也不用关心它的可执行程序叫阿猫还是阿狗）
 ENTRYPOINT ["./test"]
 
 # ENTRYPOINT不要写go run main.go
