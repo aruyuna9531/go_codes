@@ -14,6 +14,7 @@ ADD ./ ./
 # 下面这一行是把时区转为北京时间 docker内日志打印是根据的这个时区
 RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo 'Asia/Shanghai' > /etc/timezone
 
+# 字符集（可能怕中文输不出终端）
 ENV LANG C.UTF-8
 
 # proxy设置（看情况）
@@ -34,5 +35,5 @@ ENTRYPOINT ["./test"]
 
 # ENTRYPOINT不要写go run main.go
 # go run会生成2个进程，1个就是go run，另一个是go run生成的临时可执行文件，ENTRYPOINT指定的命令是PID=1的进程，因此可执行文件是PID!=1的进程。
-# docker容器里只有PID=1的进程会接收docker kill信号，不等于1的进程只能exec进去kill，因此在外面执行docker kill -s="SIGTERM"是无法被可执行程序接收从而优雅退出的，只有容器自己被SIGTERM了。
+# docker容器里只有PID=1的进程会接收docker kill信号，不等于1的进程只能exec进去kill，因此在外面执行docker kill -s="SIGTERM"是无法被可执行程序接收从而优雅退出的，只有容器自己被SIGTERM了（exitcode不会返回0）。
 # 上述写法才会让可执行程序成为PID=1的进程，docker kill sigterm可以优雅关闭容器内程序。
