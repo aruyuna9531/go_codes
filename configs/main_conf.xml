@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="" ?>
+<root>
+    <mysql>
+        <user_name>root</user_name>
+        <password>123456</password>
+        <remote_ip>localhost</remote_ip>
+        <remote_port>3306</remote_port>
+        <db_name>test</db_name>
+    </mysql>
+</root>

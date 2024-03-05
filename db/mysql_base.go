@@ -27,11 +27,11 @@ type MysqlPool struct {
 }
 
 type MysqlConf struct {
-	Username   string
-	Password   string
-	RemoteIp   string
-	RemotePort int
-	DbName     string
+	Username   string `xml:"user_name" json:"user_name"`
+	Password   string `xml:"password" json:"password"`
+	RemoteIp   string `xml:"remote_ip" json:"remote_ip"`
+	RemotePort int    `xml:"remote_port" json:"remote_port"`
+	DbName     string `xml:"db_name" json:"db_name"`
 }
 
 type DBData struct {
@@ -47,7 +47,7 @@ func NewMysqlPool() *MysqlPool {
 	}
 }
 
-func (mysql *MysqlPool) InitMysqlPool(conf MysqlConf) {
+func (mysql *MysqlPool) InitMysqlPool(conf *MysqlConf) {
 	if mysql.Inited {
 		fmt.Println("InitMysqlPool failed: Mysql Inited")
 		return
