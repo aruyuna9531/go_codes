@@ -141,8 +141,9 @@ func (wg *WaitGroup) Wait() {
 }
 
 // wg的工作流程：
-// （1）先Add，使协程计数>0（计数=0的时候跑Wait实际上等于没跑，会在第120行直接退出）
+// （1）先Add，使协程计数>0（计数=0的时候跑Wait实际上等于没跑，会在第120行直接退出），开启这一期WaitGroup工作
 // （2）执行要参与计数的等待任务，一般就是新开goroutine跑任务，也可以是其他形式的需要等待的任务（如：向其他服务器发了请求，要等待响应的场合）——这个执行操作本身不会对waitgroup产生什么影响，但任务结束的地方要显式执行Done()
-// （3）在需要等待所有计数任务执行完毕的地方跑Wait，Wait计数+1，并在runtime_Semacquire的地方阻塞住
-// （4）1个任务执行完毕，执行done，协程计数-1，并且之后当场判定状态值，如果协程计数已经为0并且存在Wait，就会给semap指针添加Wait数量等量的信号量（runtime_Semrelease），这一期WaitGroup完成。否则啥都不干，大家继续Wait
+// （3）在需要等待所有计数任务执行完毕的地方跑Wait，Wait计数+1，并在runtime_Semacquire的地方阻塞住（等待到semap>0才能解除）
+// （4）1个任务执行完毕，执行done，协程计数-1，并且之后当场判定状态值。如果协程计数已经为0并且存在Wait，就会给semap指针添加Wait数量等量的信号量（runtime_Semrelease），这一期WaitGroup名义上已经完成（形式上还没有完成，但在形式上完成之前不能有任何操作再改动那个计数，否则释放wait时会报panic）。否则啥都不干，大家继续Wait
 // （5）在runtime_Semacquire阻塞住的wait接收到semap信号量增加后，停止阻塞，并原子性地扣掉一个semap信号量，然后退出Wait，在调用Wait的地方继续往下执行
+// （6）所有wait都成功退出后，这期wg在形式上完成，wg可以被重新使用
