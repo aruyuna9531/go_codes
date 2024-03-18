@@ -71,10 +71,10 @@ func (wg *WaitGroup) Add(delta int) {
 		race.Read(unsafe.Pointer(semap))
 	}
 	if v < 0 {
-		panic("sync: negative WaitGroup counter")
+		panic("origin_code: negative WaitGroup counter")
 	} // v不能为0
 	if w != 0 && delta > 0 && v == int32(delta) {
-		panic("sync: WaitGroup misuse: Add called concurrently with Wait")
+		panic("origin_code: WaitGroup misuse: Add called concurrently with Wait")
 	} // 在有Wait协程的场合，正在跑的协程从0开始增加是不正常的
 	if v > 0 || w == 0 {
 		return
@@ -84,7 +84,7 @@ func (wg *WaitGroup) Add(delta int) {
 	// - Adds must not happen concurrently with Wait,
 	// - Wait 在看到counter == 0的时候不能再增加Wait的协程
 	if *statep != state {
-		panic("sync: WaitGroup misuse: Add called concurrently with Wait")
+		panic("origin_code: WaitGroup misuse: Add called concurrently with Wait")
 	} // 这边还是做一下靠谱性检测防止wg误用
 	// Reset waiters count to 0.
 	*statep = 0
@@ -129,7 +129,7 @@ func (wg *WaitGroup) Wait() {
 			runtime_Semacquire(semap)
 			// 阻塞完成后的一些操作，然后协程退出Wait继续往下执行
 			if *statep != 0 {
-				panic("sync: WaitGroup is reused before previous Wait has returned")
+				panic("origin_code: WaitGroup is reused before previous Wait has returned")
 			} // 第90行，Add把协程数减到0的时候将statep先置为了0，在这里检查如果不是0会报异常（不能在这一轮wg完成之前重用这个wg）
 			if race.Enabled {
 				race.Enable()
