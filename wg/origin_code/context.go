@@ -559,3 +559,13 @@ func value(c Context, key any) any {
 		}
 	}
 }
+
+// context一共有4种类型：empty、cancel、timer（带计时器的cancel型）、value
+
+// context结构：
+// （1）根节点Background，empty型，可以作为parent的一个参数，但什么都做不了
+// （2）树是多叉树结构，父节点有可能管多个子节点（如果父节点是cancel/timer型。value型自身不会作为父节点）
+// （3）父节点context被取消的时候（包括主动取消、超时等），旗下所有子孙节点都会做取消操作。但反过来不成立，子节点做取消不会影响父节点。
+// （4）对value节点取cancelCtx对象的时候会寻找祖先里最近的一个cancelCtx
+// （5）context被取消时，会给自己的Done()发送信号，并且Err()会获得取消原因（有两个，手动或超时）。外部可以通过监听Done()得知context完成。
+// （6）context被取消只是推了一个信号，不会影响上层逻辑，context被取消不会影响它逻辑上“在管”的goroutine，该跑的流程会继续跑，goroutine如果要对context做出反应，要在goroutine里面监听Done

@@ -3,7 +3,6 @@ package wg
 import (
 	"context"
 	"log"
-	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,7 +23,7 @@ func (m *Mgr) Add(f func() <-chan struct{}, timeLimit time.Duration) {
 		select {
 		case <-ctx.Done():
 			log.Printf("fcId %d not ok, reason: %s\n", realFcId, ctx.Err().Error())
-		case <-f():
+		case <-f(): // 这个写法有点问题 f阻塞5秒之后还能报ok
 			log.Printf("fcId %d ok\n", realFcId)
 		}
 	}()
@@ -36,20 +35,27 @@ func (m *Mgr) Wait() {
 
 var mgr = &Mgr{}
 
+func TestFunc() {
+	//resp, err := http.Get("https://httpbin.org/")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer resp.Body.Close()
+	//b := make([]byte, 10000)
+	//n, err := resp.Body.Read(b)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//log.Println(string(b[:n]))
+	time.Sleep(5 * time.Second)
+	log.Println("TestFunc finished in sleep 5 seconds")
+}
+
 func WgTest() {
+	log.Println("WgTest start")
 	gr := func() <-chan struct{} {
 		done := make(chan struct{}, 1) // 这里返回的chan必须要有缓冲区 否则会阻塞在done <-那里
-		resp, err := http.Get("https://httpbin.org/")
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-		b := make([]byte, 10000)
-		n, err := resp.Body.Read(b)
-		if err != nil {
-			panic(err)
-		}
-		log.Println(string(b[:n]))
+		TestFunc()
 		done <- struct{}{}
 		close(done)
 		return done
@@ -58,4 +64,5 @@ func WgTest() {
 		mgr.Add(gr, 3*time.Second)
 	}
 	mgr.Wait()
+	log.Println("WgTest finished")
 }
